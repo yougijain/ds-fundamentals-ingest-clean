@@ -1,0 +1,6 @@
+pandas
+ydata-profiling
+sqlalchemy
+requests
+beautifulsoup4
+pytest
