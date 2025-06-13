@@ -1,8 +1,19 @@
 import sqlite3, pandas as pd, streamlit as st
 import pydeck as pdk
+import os
 
 DB_PATH = "data/clean/data.db"
 SQL_DIR = "sql"
+
+# Load Mapbox key if provided via Streamlit secrets or env
+mapbox_token = st.secrets.get("MAPBOX_API_KEY") or os.getenv("MAPBOX_API_KEY")
+
+# Choose basemap style
+if mapbox_token:
+    os.environ["MAPBOX_API_KEY"] = mapbox_token
+    BASEMAP = "mapbox://styles/mapbox/dark-v10"
+else:
+    BASEMAP = None  # we’ll use an OpenStreetMap TileLayer instead
 
 @st.cache_data(ttl=600)
 def load(sql_file: str) -> pd.DataFrame:
@@ -103,10 +114,8 @@ def main():
     )
 # ---------------------------------------------
 
-
-
     st.subheader("Sample of Filtered Records")
-    st.dataframe(df_filt.head(10))
+    st.dataframe(df_filt.head(7))
 
 if __name__ == "__main__":
     main()

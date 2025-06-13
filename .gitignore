@@ -1,6 +1,11 @@
-# My Specific Additions
+#--------My Specific Additions-------
+# Full CSV
 data/raw/nyc_collisions_2020-2025.csv
+# MapBox Token:
+.streamlit/secrets.toml 
 
+
+#-----------Generated-------------
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
