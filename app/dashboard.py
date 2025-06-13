@@ -1,5 +1,5 @@
 import sqlite3, pandas as pd, streamlit as st
-import pydeck as pdk # heatmap support, to replace dot map
+import pydeck as pdk
 
 DB_PATH = "data/clean/data.db"
 SQL_DIR = "sql"
@@ -34,7 +34,8 @@ def main():
 
     st.write(f"**Incidents (injuries/fatalities):** {len(df_filt):,}")
 
-    df2 = load("02_aggregate.sql").assign(borough=lambda d: d["borough"].fillna("UNKNOWN"))
+    df2 = load("02_aggregate.sql")
+    df2["borough"] = df2["borough"].fillna("UNKNOWN")
     st.subheader("Total Injuries by Borough")
     st.bar_chart(df2[df2["borough"].isin(selected)].set_index("borough")["total_injuries"])
 
@@ -42,18 +43,51 @@ def main():
     st.subheader("Crashes by Hour (AM/PM)")
     st.line_chart(df3.set_index("hour_label")["crash_count"])
 
+
+
+# --------------- Crash Heatmap ---------------
+
     st.subheader("Crash Heatmap")
-    midpoint = (40.7128, -74.0060)
-    layer = pdk.Layer(
+
+    view_state = pdk.ViewState(
+        latitude=40.734,
+        longitude=-73.9,
+        zoom=9.7,                   # zoom level (lower = zoom out, higher = zoom in)
+        pitch=0                     # tilt angle (0 = top-down view, >0 for perspective)
+    )
+
+    heat = pdk.Layer(
         "HeatmapLayer",
         df_filt,
         get_position=["longitude", "latitude"],
-        radius_pixels=50,
+        radius_pixels=30,           # radius of influence per data point in pixels
+        intensity=1.3,              # heat strength multiplier (higher = hotter)
+        threshold=0.1,              # cutoff for minimum normalized weight to render
+        color_range=[               # color gradient stops [R,G,B,A] with half opacity
+            [0,   0,   0,   0],     # 0 intensity (transparent)
+            [0,   255, 0,   50],    # low intensity (alpha=50, half of 100)
+            [255, 255, 0,   75],    # medium intensity (alpha=75, half of 150)
+            [255, 0,   0,   100],   # high intensity (alpha=100, half of 200)
+        ],
     )
-    view_state = pdk.ViewState(
-        latitude=midpoint[0], longitude=midpoint[1], zoom=10, pitch=0
+
+    tiles = pdk.Layer(
+        "TileLayer",
+        data="https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        tile_size=256,              # size of each map tile (standard = 256)
+        opacity=1.0,                # tile layer opacity (0 = transparent, 1 = opaque)
     )
-    st.pydeck_chart(pdk.Deck(layers=[layer], initial_view_state=view_state))
+
+    st.pydeck_chart(
+        pdk.Deck(
+            map_style=None, 
+            initial_view_state=view_state,
+            layers=[heat, tiles]
+        )
+    )
+# ---------------------------------------------
+
+
 
     st.subheader("Sample of Filtered Records")
     st.dataframe(df_filt.head(10))
