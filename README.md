@@ -57,7 +57,7 @@ python scripts/load_to_sqlite.py
 pytest -q
 ```
 
-4. **Launch the dashboard
+4. **Launch the dashboard**
 
 ```bash
 streamlit run app/dashboard.py
