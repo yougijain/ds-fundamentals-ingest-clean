@@ -31,6 +31,7 @@ def main():
         (df["borough"].isin(selected))
     )
     df_filt = df.loc[mask].dropna(subset=["latitude", "longitude"])
+    df_filt["crash_datetime_str"] = df_filt["crash_datetime"].dt.strftime("%Y-%m-%d %H:%M:%S")
 
     st.write(f"**Incidents (injuries/fatalities):** {len(df_filt):,}")
 
@@ -59,15 +60,17 @@ def main():
     heat = pdk.Layer(
         "HeatmapLayer",
         df_filt,
+        
         get_position=["longitude", "latitude"],
-        radius_pixels=30,           # radius of influence per data point in pixels
-        intensity=1.3,              # heat strength multiplier (higher = hotter)
-        threshold=0.1,              # cutoff for minimum normalized weight to render
-        color_range=[               # color gradient stops [R,G,B,A] with half opacity
-            [0,   0,   0,   0],     # 0 intensity (transparent)
-            [0,   255, 0,   50],    # low intensity (alpha=50, half of 100)
-            [255, 255, 0,   75],    # medium intensity (alpha=75, half of 150)
-            [255, 0,   0,   100],   # high intensity (alpha=100, half of 200)
+        pickable=True,               # enable picking for tooltips
+        radius_pixels=30,     # radius of influence per data point in pixels
+        intensity=1.4,               # heat strength multiplier (higher = hotter)
+        threshold=0.3,               # cutoff for minimum normalized weight to render
+        color_range=[                # color gradient stops [R,G,B,A] with half opacity
+            [0,   0,   0,   0],     
+            [0,   255, 0,   70],    
+            [255, 255, 0,   95],    
+            [255, 0,   0,   130],   
         ],
     )
 
@@ -77,12 +80,25 @@ def main():
         tile_size=256,              # size of each map tile (standard = 256)
         opacity=1.0,                # tile layer opacity (0 = transparent, 1 = opaque)
     )
-
+    
+    scatter = pdk.Layer(
+        "ScatterplotLayer",
+        df_filt,
+        get_position=["longitude", "latitude"],
+        get_radius=100,              # pick radius in meters
+        get_fill_color=[0, 0, 0, 0], # fully transparent
+        pickable=True
+    )
+    tooltip = {
+        "text": "Date: {crash_datetime_str}\nBorough: {borough}",
+        "style": {"backgroundColor": "rgba(0, 0, 0, 0.8)", "color": "white"}
+    }
     st.pydeck_chart(
         pdk.Deck(
-            map_style=None, 
+            map_style="mapbox://styles/mapbox/dark-v10",
             initial_view_state=view_state,
-            layers=[heat, tiles]
+            layers=[tiles, heat, scatter],
+            tooltip=tooltip
         )
     )
 # ---------------------------------------------
